@@ -344,3 +344,66 @@ Congratulations! You have completed this module. At this point in the course, yo
 - RunnableParallel allows multiple components to run concurrently with the same input.
 - LCEL provides a more concise syntax by replacing RunnableSequence with the pipe operator.
 - Type coercion in LCEL automatically converts functions and dictionaries into compatible components.
+
+## **Introduction to LangChain**
+
+In the rapidly evolving landscape of artificial intelligence (AI), the LangChain framework has emerged as a beacon for developers and researchers keen on harnessing the power of large language models (LLMs) for practical applications. LangChain is an open-source framework designed to streamline the creation and deployment of language AI applications, focusing on extracting specific data points from extensive texts and facilitating complex language-based operations.
+
+### **Benefits:**
+
+LangChain is useful for several reasons:
+
+- **Modularity:** LangChain's modular design allows users to piece together different components like building blocks, fostering an environment of innovation and flexibility. This modularity not only simplifies the development process but also encourages the reuse of components, reducing the time and effort required to bring new ideas to fruition.
+- **Chain of thought processing:** LangChain employs a "chain of thought" processing model that breaks down complex queries or tasks into smaller, manageable steps and enhances the model's understanding of context and its ability to make accurate inferences, resulting in more relevant and precise responses. With this ability, LangChain mimics human problem-solving processes, making the interactions with AI more natural and intuitive.
+- **Integration with vector databases:** LangChain offers seamless integration with vector store databases that enables efficient semantic search and information retrieval, essential for applications requiring quick access to relevant data points within extensive datasets. The ability to query and retrieve information based on semantic similarity opens new possibilities for knowledge management and information discovery.
+
+**LangChain extensibility**
+
+A crucial aspect of LangChain's design is its extensibility, which allows it to add new features, adapt to existing components, or integrate with external systems to meet specific project requirements easily. With its flexible design, LangChain ensures that applications built on it can evolve alongside emerging technologies and changing business needs.
+
+**Practical applications of LangChain**
+
+LangChain finds its use in various aspects:
+
+- **Content summarization:** LangChain can automatically summarize articles, reports, and documents, highlighting key information for quick consumption that helps users stay informed about developments in their field without dedicating hours to reading.
+- **Data extraction:** The LangChain framework's ability to retrieve specific information from unstructured texts for data analysis and management. It can extract key financial figures from reports or identify relevant case law in legal documents, simplifying the process of turning text into actionable insights.
+- **Question answering systems:** Building sophisticated QA systems with LangChain can transform customer support and information retrieval services. By understanding and responding to queries with contextually relevant answers, these systems can provide a higher level of service and efficiency.
+
+• **Automated content generation:** LangChain's capabilities extend to content creation, enabling the automatic generation of written materials. The framework opens new possibilities for automating routine writing tasks, from drafting emails to generating creative writing or technical documentation.
+
+LangChain represents a pivotal development in the field of AI, offering a comprehensive toolset to tackle the complexities of language-based applications.
+
+### **LangChain: Core Concepts**
+
+LangChain is an open-source interface that simplifies the application development process using LLMs. The core components of LangChain are The language models in LangChain use text input to generate text output. The chat model understands the question or prompts and responds like a human. The chat model handles various chat messages such as 
+
+human message, 
+
+AI message, 
+
+system message,
+
+function message, 
+
+and tool message.
+The prompt templates in LangChain translate the questions or messages into clear instructions. You've also learned about the example selector which instructs the model for the inserted context and guides LLM to generate the desired output. Lastly, you learned about the Output Parsers that transform the output from an LLM into a suitable format.
+
+LangChain is a platform that embeds APIs for developing applications. Chains is the sequence of calls. In chains, the output from one step becomes the input for the next step. In LangChain, chains first define the template string for the prompt, then creates a prompt template using the defined template, and creates an LLM chain object name. 
+
+In LangChain, memory storage is important for reading and writing historical data. Agents in LangChain are dynamic systems where a language model determines and sequences actions such as pre-defined chains. Agents integrate with tools such as search engines, databases, and websites to fulfill user requests. 
+
+**Create LCEL Chain**
+
+ To create a typical LCEL pattern, you need to Define a template with variables and curly braces Create a prompt template instance. Build a chain using the pipe operator to connect components. Invoke the chain with input values. 
+
+In LangChain, runnables serve as an interface and building blocks that connect different components like LLMs, retrievers, and tools into a pipeline.
+
+There are two main runnable composition primitives. Runnable sequence chains components sequentially, passing the output from one component as input to the next. RunnableParallel runs multiple components concurrently while using the same input for each. However, LCEL provides elegant syntax shortcuts. For example, instead of using runnable sequence, the same sequential chain can be created by simply connecting runnable 1 and runnable 2 with a pipe, making the structure more readable and intuitive. LCEL also handles type coercion automatically. This means it converts regular code into runnable components.  
+
+When you use a **dictionary**, it becomes a **runnable parallel**, which runs multiple tasks simultaneously. When you use a **function**, it becomes a **RunnableLambda**, which transforms inputs. This happens behind the scenes, so you don't have to handle the conversion manually.
+
+The RunnableLambda in this chain wraps the Format_prompt function, transforming it into a runnable component that LangChain can work with. When the chain runs, RunnableLambda takes the input dictionary, containing adjective and content keys, passes this dictionary to the Format_prompt function. The function formats the prompt template with these variables. The formatted prompt is then passed to the next component, the LLM. 
+
+The pipe operator creates a sequence by connecting runnable components together. In this joke chain, first, the RunnableLambda formats the prompt with variables. The pipe operator passes the formatted prompt to the LLM. Another pipe passes the LLM's response to the StrOutputParser.
+
+[Module 2 Lab 1](https://www.notion.so/Module-2-Lab-1-2eafdd05003e80d0b8ebca1df2bb362e?pvs=21)
