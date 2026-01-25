@@ -15,6 +15,23 @@ For this lab, you will use the following libraries:
 - [`pypdf`](https://pypi.org/project/pypdf/) is an open-source pure-python PDF library capable of splitting, merging, cropping, and transforming the pages of PDF files.
 - [`chromadb`](https://www.trychroma.com/) is an open-source vector database used to store embeddings.
 
+Requirements
+
+```bash
+%%capture
+!pip install --force-reinstall --no-cache-dir tenacity==8.2.3 --user
+!pip install "ibm-watsonx-ai==1.0.8" --user
+!pip install "ibm-watson-machine-learning==1.0.367" --user
+!pip install "langchain-ibm==0.1.7" --user
+!pip install "langchain-community==0.2.10" --user
+!pip install "langchain-experimental==0.0.62" --user
+!pip install "langchainhub==0.1.18" --user
+!pip install "langchain==0.2.11" --user
+!pip install "pypdf==4.2.0" --user
+!pip install "chromadb==0.4.24" --user
+pip install ipdb
+```
+
 A large language model (LLM) serves as the interface for the AI's capabilities. The LLM processes plain text input and generates text output, forming the core functionality needed to complete various tasks. When integrated with LangChain, the LLM becomes a powerful tool, providing the foundational structure necessary for building and deploying sophisticated AI applications.
 
 Changed the model, as it is not working properly.
@@ -821,3 +838,362 @@ conversation = ConversationChain(
 
 conversation.invoke(input="Hello, I am a little cat. Who are you?")
 ```
+
+## Exercise - 5
+
+```bash
+from langchain.memory import ConversationBufferMemory, ChatMessageHistory
+from langchain.chains import ConversationChain
+from langchain_core.messages import HumanMessage, AIMessage
+from ibm_watsonx_ai.foundation_models import ModelInference
+from ibm_watsonx_ai.metanames import GenTextParamsMetaNames as GenParams
+from ibm_watson_machine_learning.foundation_models.extensions.langchain import WatsonxLLM
+
+# 1. Set up the language model
+model_id = 'meta-llama/llama-4-maverick-17b-128e-instruct-fp8'
+parameters = {
+    GenParams.MAX_NEW_TOKENS: 256,
+    GenParams.TEMPERATURE: 0.2,
+}
+credentials = {"url": "https://us-south.ml.cloud.ibm.com"}
+project_id = "skills-network"
+
+# Initialize the model
+model = ModelInference(
+    model_id=model_id,
+    credentials=credentials,
+    project_id=project_id,
+    params=parameters,
+)  
+llm = WatsonxLLM(model = model)
+
+# 2. Create a simple conversation with chat history
+history = ChatMessageHistory()
+
+# Add some initial messages (optional)
+history.add_user_message("Hello, my name is Bhanu Pradeep")
+history.add_ai_message("Hello Alice how May I help you")
+##TODO: Add an AI response
+
+# 3. Print the current conversation history
+##TODO: Print the current messages in history
+print(f"Initial Messages : {history.messages}")
+
+for message in history.messages:
+    sender = "Human" if isinstance(message,HumanMessage) else "AI"
+    print(f"{sender} : {message.content}")
+
+# 4. Set up a conversation chain with memory
+memory = ConversationBufferMemory(chat_memory  = history)
+
+conversation = ConversationChain(
+    # The language model to use for generating responses
+    llm=llama_llm,
+    
+    # Set verbose to True to see the full prompt sent to the LLM, including memory contents
+    verbose=True,
+    
+    # Initialize with ConversationBufferMemory that will:
+    # - Store all conversation turns (user inputs and AI responses)
+    # - Append the entire conversation history to each new prompt
+    # - Provide context for the LLM to generate contextually relevant responses
+    memory=memory
+)
+
+# 5. Function to simulate a conversation
+def chat_simulation(conversation, inputs):
+    """Run a series of inputs through the conversation chain and display responses"""
+    print("\n=== Beginning Chat Simulation ===")
+    
+    for i, user_input in enumerate(inputs):
+        print(f"\n--- Turn {i+1} ---")
+        print(f"Human: {user_input}")
+        
+        # Get response from the conversation chain
+        response = conversation.invoke(input=user_input)
+        
+        # Print the AI's response
+        print(f"AI: {response['response']}")
+    
+    print("\n=== End of Chat Simulation ===")
+
+# 6. Test with a series of related questions
+test_inputs = [
+    "My favorite color is blue.",
+    "I enjoy hiking in the mountains.",
+    "What activities would you recommend for me?",
+    "What was my favorite color again?",
+    "Can you remember both my name and my favorite color?"
+]
+
+chat_simulation(conversation, test_inputs)
+
+# 7. Examine the conversation memory
+print("\nFinal Memory Contents:")
+##TODO: Print the contents of the conversation memory
+print(conversation.memory.buffer)
+
+# 8. Create a new conversation with a different type of memory (optional)
+# Try implementing ConversationSummaryMemory or another type of memory
+
+from langchain.memory import ConversationSummaryMemory
+
+summary_memory  = ConversationSummaryMemory(llm = llm)
+
+summary_memory.save_context(
+    {"Input": "hello I am Bhanu"},
+    {"Output":"This is ur Assistant Let me know How can I help you to Improve"})
+
+summary_conversation = ConversationChain(
+    llm = llm,
+    memory= summary_memory,
+    verbose= True
+)
+
+print("\n ===========Testing Conversation summary memory===============")
+
+chat_simulation(summary_conversation,test_inputs)
+
+print("\n ===========Conversation summary buffer===============")
+print(summary_conversation.memory.buffer)
+
+print("\n ==============Memory Comparision ====================")
+
+print(f" summary conversation : {len(summary_conversation.memory.buffer)} contents")
+print(f" Buffer conversation : {len(conversation.memory.buffer)} contents")
+
+```
+
+### **Chains**
+
+`Chains` are one of the most powerful features in LangChain, allowing you to combine multiple components into cohesive workflows. This section presents two different methodologies for implementing chains - the traditional `SequentialChain` approach and the newer LangChain Expression Language (`LCEL`).
+
+**Why Chains Matter:**
+
+Chains solve a fundamental problem with LLMs. Chains are primarily designed to handle a single prompt and generate a single response. However, most real-world applications require multi-step reasoning, accessing different tools, or breaking complex tasks into manageable pieces. Chains allow you to orchestrate these complex workflows.
+
+**Evolution of Chain Patterns:**
+
+Traditional chains (`LLMChain`, `SequentialChain`) were LangChain's first implementation, offering a structured but somewhat rigid approach. LCEL (using the pipe operator `|`) represents a more flexible, functional approach that's easier to compose and debug.
+
+**Note:** While both approaches are presented here for educational purposes, **LCEL is the recommended pattern for new development.** The SequentialChain approach continues to be supported for backward compatibility, but the LangChain community has largely transitioned to the LCEL pattern for its superior flexibility and expressiveness.
+
+**Simple Chain**
+
+**Traditional Approach: LLMChain**
+
+Here is a simple single chain using `LLMChain`.
+
+```bash
+# Import the LLMChain class from langchain.chains module
+from langchain.chains import LLMChain
+
+# Create a template string for generating recommendations of classic dishes from a given location
+# The template includes:
+# - Instructions for the task (recommending a classic dish)
+# - A placeholder {location} that will be replaced with user input
+# - A format indicator for the expected response
+template = """Your job is to come up with a classic dish from the area that the users suggests.
+{location}
+ YOUR RESPONSE:
+"""
+
+# Create a PromptTemplate object by providing:
+# - The template string defined above
+# - A list of input variables that will be used to format the template
+prompt_template = PromptTemplate(template=template, input_variables=['location'])
+
+# Create an LLMChain that connects:
+# - The Llama language model (llama_llm)
+# - The prompt template configured for location-based dish recommendations
+# - An output_key 'meal' that specifies the key name for the chain's response in the output dictionary
+location_chain = LLMChain(llm=llama_llm, prompt=prompt_template, output_key='meal')
+
+# Invoke the chain with 'China' as the location input
+# This will:
+# 1. Format the template with {location: 'China'}
+# 2. Send the formatted prompt to the Llama LLM
+# 3. Return a dictionary with the response under the key 'meal'
+location_chain.invoke(input={'location':'Andhra pradesh'})
+```
+
+```bash
+# Import PromptTemplate from langchain_core.prompts
+# This is the new import path in LangChain's modular structure
+from langchain_core.prompts import PromptTemplate
+
+# Import StrOutputParser from langchain_core.output_parsers
+from langchain_core.output_parsers import StrOutputParser
+
+template = """Your job is to come up with a classic dish from the area that the users suggests.
+{location}
+ YOUR RESPONSE:
+"""
+
+# Create a prompt template using the from_template method
+prompt = PromptTemplate.from_template(template)
+
+# Create a chain using LangChain Expression Language (LCEL) with the pipe operator
+# This creates a processing pipeline that:
+# 1. Formats the prompt with the input values
+# 2. Sends the formatted prompt to the Llama LLM
+# 3. Parses the output to extract just the string response
+location_chain_lcel = prompt | llama_llm | StrOutputParser()
+
+# Invoke the chain with 'China' as the location
+result = location_chain_lcel.invoke({"location": "Andhra pradesh"})
+
+# Print the result (the recommended classic dish from China)
+print(result)
+```
+
+### **Simple sequential chain**
+
+Sequential chains allow you to use output of one LLM as the input for another LLM. This approach is beneficial for dividing tasks and maintaining the focus of your LLM.
+
+In this example, you see a sequence that:
+
+- Gets a meal from a location
+- Gets a recipe for that meal
+- Estimates the cooking time for that recipe
+
+This pattern is incredibly valuable for breaking down complex tasks into logical steps, where each step depends on the output of the previous step. The traditional approach uses `SequentialChain`, while the modern `LCEL` approach uses piping and `RunnablePassthrough.assign`.
+
+### **Traditional Approach: `SequentialChain`[¶](https://jupyterlabnext-0-labs-prod-jupyterlab-us-east-0.labs.cognitiveclass.ai/user/bhanupradee1/lab/tree/AI0220EN/Build%20Smarter%20AI%20Apps%20Empower%20LLMs%20with%20LangChain.ipynb#Traditional-Approach:-SequentialChain)**
+
+```bash
+# Import SequentialChain from langchain.chains module
+from langchain.chains import SequentialChain
+
+# Create a template for generating a recipe based on a meal
+template = """Given a meal {meal}, give a short and simple recipe on how to make that dish at home.
+ YOUR RESPONSE:
+"""
+
+# Create a PromptTemplate with 'meal' as the input variable
+prompt_template = PromptTemplate(template=template, input_variables=['meal'])
+
+# Create an LLMChain (chain 2) for generating recipes
+# The output_key='recipe' defines how this chain's output will be referenced in later chains
+dish_chain = LLMChain(llm=llama_llm, prompt=prompt_template, output_key='recipe')
+```
+
+```bash
+# Create a template for estimating cooking time based on a recipe
+# This template asks the LLM to analyze a recipe and estimate preparation time
+template = """Given the recipe {recipe}, estimate how much time I need to cook it.
+ YOUR RESPONSE:
+"""
+
+# Create a PromptTemplate with 'recipe' as the input variable
+prompt_template = PromptTemplate(template=template, input_variables=['recipe'])
+
+# Create an LLMChain (chain 3) for estimating cooking time
+# The output_key='time' defines the key for this chain's output in the final result
+recipe_chain = LLMChain(llm=llama_llm, prompt=prompt_template, output_key='time')
+```
+
+```bash
+# Create a SequentialChain that combines all three chains:
+# 1. location_chain (from earlier code): Takes a location and suggests a dish
+# 2. dish_chain: Takes the suggested dish and provides a recipe
+# 3. recipe_chain: Takes the recipe and estimates cooking time
+overall_chain = SequentialChain(
+    # List of chains to execute in sequence
+    chains=[location_chain, dish_chain, recipe_chain],
+    
+    # The input variables required to start the chain sequence
+    # Only 'location' is needed to begin the process
+    input_variables=['location'],
+    
+    # The output variables to include in the final result
+    # This makes the output of each chain available in the final result
+    output_variables=['meal', 'recipe', 'time'],
+    
+    # Whether to print detailed information about each step
+    verbose=True
+)
+```
+
+```bash
+from pprint import pprint
+pprint(overall_chain.invoke(input={'location':'Andhra pradesh'}))
+```
+
+```bash
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+# Define the templates for each step
+location_template = """Your job is to come up with a classic dish from the area that the users suggests.
+{location}
+
+YOUR RESPONSE:
+"""
+
+dish_template = """Given a meal {meal}, give a short and simple recipe on how to make that dish at home.
+
+YOUR RESPONSE:
+"""
+
+time_template = """Given the recipe {recipe}, estimate how much time I need to cook it.
+
+YOUR RESPONSE:
+"""
+
+# Create the location chain using LCEL (LangChain Expression Language)
+# This chain takes a location and returns a classic dish from that region
+location_chain_lcel = (
+    PromptTemplate.from_template(location_template)  # Format the prompt with location
+    | llama_llm                                    # Send to the LLM
+    | StrOutputParser()                              # Extract the string response
+)
+
+# Create the dish chain using LCEL
+# This chain takes a meal name and returns a recipe
+dish_chain_lcel = (
+    PromptTemplate.from_template(dish_template)      # Format the prompt with meal
+    | llama_llm                                    # Send to the LLM
+    | StrOutputParser()                              # Extract the string response
+)
+
+# Create the time estimation chain using LCEL
+# This chain takes a recipe and returns an estimated cooking time
+time_chain_lcel = (
+    PromptTemplate.from_template(time_template)      # Format the prompt with recipe
+    | llama_llm                                    # Send to the LLM
+    | StrOutputParser()                              # Extract the string response
+)
+
+# Combine all chains into a single workflow using RunnablePassthrough.assign
+# RunnablePassthrough.assign adds new keys to the input dictionary without removing existing ones
+overall_chain_lcel = (
+    # Step 1: Generate a meal based on location and add it to the input dictionary
+    RunnablePassthrough.assign(meal=lambda x: location_chain_lcel.invoke({"location": x["location"]}))
+    # Step 2: Generate a recipe based on the meal and add it to the input dictionary
+    | RunnablePassthrough.assign(recipe=lambda x: dish_chain_lcel.invoke({"meal": x["meal"]}))
+    # Step 3: Estimate cooking time based on the recipe and add it to the input dictionary
+    | RunnablePassthrough.assign(time=lambda x: time_chain_lcel.invoke({"recipe": x["recipe"]}))
+)
+# Run the chain
+result = overall_chain_lcel.invoke({"location": "China"})
+pprint(result)
+```
+
+## **Exercise 6**
+
+### **Implementing Multi-Step Processing with Different Chain Approaches**
+
+In this exercise, you'll create a multi-step information processing system using both traditional chains and the modern LCEL approach. You'll build a system that analyzes product reviews, extracts key information, and generates responses based on the analysis.
+
+**Instructions:**
+
+1. Import the necessary components for both traditional chains and LCEL.
+2. Implement a three-step process using both traditional SequentialChain and modern LCEL approaches.
+3. Create templates for sentiment analysis, summarization, and response generation.
+4. Test your implementations with sample product reviews.
+5. Compare the flexibility and readability of both approaches.
+6. Document the advantages and disadvantages of each method.
+
+**Starter code: provide your solution in the TODO parts**
