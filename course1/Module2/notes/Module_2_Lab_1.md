@@ -1197,3 +1197,7 @@ In this exercise, you'll create a multi-step information processing system using
 6. Document the advantages and disadvantages of each method.
 
 **Starter code: provide your solution in the TODO parts**
+
+**FLASK**
+
+Flask-CORS allows your application to handle Cross-Origin Resource Sharing, making cross-origin JavaScript requests possible. Flask-Migrate adds database migrations to SQLAlchemy ORM. Flask-User adds user authentication, authorization, and other user management activities. Marshmallow adds extensive object serialization and deserialization support to your code. Finally, celery is a powerful task queue that can be used for simple background tasks and complex multi-storage programs and schedules. Flask is available on the Python package manager called pip, and pip is available in the lab environment. However, if installing on your machines, it is recommended that you first create a virtual environment using the venv or bin venv module.
