@@ -1196,8 +1196,454 @@ In this exercise, you'll create a multi-step information processing system using
 5. Compare the flexibility and readability of both approaches.
 6. Document the advantages and disadvantages of each method.
 
+<<<<<<< Updated upstream
+**Starter code: provide your solution in the TODO parts**
+=======
 **Starter code: provide your solution in the TODO parts**
 
-**FLASK**
+```bash
+from langchain.chains import LLMChain, SequentialChain
+from langchain_core.prompts import PromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 
-Flask-CORS allows your application to handle Cross-Origin Resource Sharing, making cross-origin JavaScript requests possible. Flask-Migrate adds database migrations to SQLAlchemy ORM. Flask-User adds user authentication, authorization, and other user management activities. Marshmallow adds extensive object serialization and deserialization support to your code. Finally, celery is a powerful task queue that can be used for simple background tasks and complex multi-storage programs and schedules. Flask is available on the Python package manager called pip, and pip is available in the lab environment. However, if installing on your machines, it is recommended that you first create a virtual environment using the venv or bin venv module.
+# Sample product reviews for testing
+positive_review = """I absolutely love this coffee maker! It brews quickly and the coffee tastes amazing. 
+The built-in grinder saves me so much time in the morning, and the programmable timer means 
+I wake up to fresh coffee every day. Worth every penny and highly recommended to any coffee enthusiast."""
+
+negative_review = """Disappointed with this laptop. It's constantly overheating after just 30 minutes of use, 
+and the battery life is nowhere near the 8 hours advertised - I barely get 3 hours. 
+The keyboard has already started sticking on several keys after just two weeks. Would not recommend to anyone."""
+
+# Step 1: Define the prompt templates for each processing step
+sentiment_template = """Analyze the sentiment of the following product review as positive, negative, or neutral.
+Provide your analysis in the format: "SENTIMENT: [positive/negative/neutral]"
+
+Review: {review}
+
+Your analysis:
+"""
+
+summary_template = """Summarize the following product review into 3-5 key bullet points.
+Each bullet point should be concise and capture an important aspect mentioned in the review.
+
+Review: {review}
+Sentiment: {sentiment}
+
+Key points:
+"""
+
+response_template = """Write a helpful response to a customer based on their product review.
+If the sentiment is positive, thank them for their feedback. If negative, express understanding 
+and suggest a solution or next steps. Personalize based on the specific points they mentioned.
+
+Review: {review}
+Sentiment: {sentiment}
+Key points: {summary}
+
+Response to customer:
+"""
+
+# TODO: Create prompt templates for each step
+
+sentiment_prompt = PromptTemplate.from_template(sentiment_template)
+summary_prompt = PromptTemplate.from_template(summary_template)
+response_prompt = PromptTemplate.from_template(response_template)
+
+# PART 1: Traditional Chain Approach
+# TODO: Create individual LLMChains for each step
+
+sentiment_chain = LLMChain(llm = llama_llm,prompt = sentiment_prompt, output_key='sentiment')
+summary_chain = LLMChain(llm=llama_llm, prompt = summary_prompt,output_key='summary')
+response_chain = LLMChain(llm = llama_llm, prompt=response_prompt, output_key='response')
+
+# TODO: Create a SequentialChain to connect all steps
+
+sequential_chain = SequentialChain(
+    chains = [sentiment_chain, summary_chain, response_chain],
+    input_variables= ['review'],
+    output_variables=['sentiment','summary','response'],
+    verbose = True
+)
+
+# pprint(sequential_chain.invoke(input={'review':positive_review}))
+# pprint(sequential_chain.invoke(input={'review':negative_review}))
+
+# PART 2: LCEL Approach
+# TODO: Create individual chain components using the pipe operator (|)
+
+sentiment_chain_lcel = sentiment_prompt | llama_llm | StrOutputParser()
+summary_chain_lcel = summary_prompt | llama_llm | StrOutputParser()
+response_chain_lcel = response_prompt | llama_llm | StrOutputParser()
+
+# TODO: Connect the components using RunnablePassthrough.assign()
+
+# overall_lcel_chain = (
+#     RunnablePassthrough.assign(sentiment = lamda x : sentiment_chain_lcel.invoke({"review":x["review"]}))
+
+#     | RunnablePassthrough.assign(summary = lamda x : sentiment_chain_lcel.invoke({"review":x["review"]},{"sentiment":x["sentiment"]}))
+
+#     | RunnablePassthrough.assign(response = lamda x : sentiment_chain_lcel.invoke({"review":x["review"]},{"sentiment":x["sentiment"]},{"summary":x["summary"]}))
+
+# )
+
+overall_lcel_chain = (
+    RunnablePassthrough.assign(
+        sentiment=lambda x: sentiment_chain_lcel.invoke({"review": x["review"]})
+    )
+    | RunnablePassthrough.assign(
+        summary=lambda x: summary_chain_lcel.invoke({
+            "review": x["review"], 
+            "sentiment": x["sentiment"]
+        })
+    )
+    | RunnablePassthrough.assign(
+        response=lambda x: response_chain_lcel.invoke({
+            "review": x["review"], 
+            "sentiment": x["sentiment"], 
+            "summary": x["summary"]
+        })
+    )
+)
+
+# Test both implementations
+def test_chains(review):
+    """Test both chain implementations with the given review"""
+    print("\n" + "="*50)
+    print(f"TESTING WITH REVIEW:\n{review[:100]}...\n")
+    
+    print("TRADITIONAL CHAIN RESULTS:")
+    traditional_results = sequential_chain.invoke({"review": review})
+    print(f"Sentiment: {traditional_results['sentiment']}")
+    print(f"Summary: {traditional_results['summary']}")
+    print(f"Response: {traditional_results['response']}")
+    
+    print("\nLCEL CHAIN RESULTS:")
+    lcel_results = overall_lcel_chain.invoke({"review": review})
+    print(f"Sentiment: {lcel_results['sentiment']}")
+    print(f"Summary: {lcel_results['summary']}")
+    print(f"Response: {lcel_results['response']}")
+    
+    print("="*50)
+    
+    print("="*50)
+
+# Run tests
+test_chains(positive_review)
+test_chains(negative_review)
+```
+
+### **Tools and Agents**
+
+**Tools**
+
+Tools extend an LLM's capabilities beyond just generating text. They allow the model to actually perform actions in the world or access external systems. This notebook shows the Python REPL tool, but there are many other tools:
+
+- Search tools: Connect to search engines, database queries, or vector stores.
+- API tools: Make calls to external web services.
+- Human-in-the-loop tools: Request human input for critical decisions.
+
+You can find a list of tools that LangChain supports at [https://python.langchain.com/docs/how_to/#tools](https://python.langchain.com/docs/how_to/#tools).
+
+Let’s explore how to work with tools, using the `Python REPL` tool as an example. The `Python REPL` tool can run Python commands. These commands can either come from the user or the LLM can generate the commands. This tool is particularly useful for complex calculations. Instead of having the LLM generate the answer directly, using the LLM to generate code to calculate the answer is more efficient.
+
+The `@tool` decorator is a convenient way to define tools, but you can also use the Tool class directly:
+
+```bash
+from langchain_core.tools import Tool
+from langchain.tools import tool
+from langchain_experimental.utilities import PythonREPL
+
+# Create a PythonREPL instance
+# This provides an environment where Python code can be executed as strings
+python_repl = PythonREPL()
+
+# Create a Tool using the Tool class
+# This wraps the Python REPL functionality as a tool that can be used by agents
+python_calculator = Tool(
+    # The name of the tool - this helps agents identify when to use this tool
+    name="Python Calculator",
+    
+    # The function that will be called when the tool is used
+    # python_repl.run takes a string of Python code and executes it
+    func=python_repl.run,
+    
+    # A description of what the tool does and how to use it
+    # This helps the agent understand when and how to use this tool
+    description="Useful for when you need to perform calculations or execute Python code. Input should be valid Python code."
+)
+```
+
+```bash
+python_calculator.invoke("a = 3; b = 1; print(a+b)")
+
+@tool
+def search_weather(location: str):
+    """Search for the current weather in the specified location."""
+    # In a real application, this would call a weather API
+    return f"The weather in {location} is currently sunny and 72°F."
+```
+
+### **Toolkits**
+
+Toolkits are collections of tools that are designed to be used together for specific tasks.
+
+Let's create a simple toolkit that contains multiple tools:
+
+```bash
+# Create a toolkit (collection of tools)
+tools = [python_calculator, search_weather]
+```
+
+### **Agents**
+
+By themselves, language models can't take actions; they just output text. A big use case for LangChain is creating agents. Agents are systems that leverage a large language model (LLM) as a reasoning engine to identify appropriate actions and determine the required inputs for those actions. The results of those actions are to be fed back into the agent. The agent then makes a determination whether more actions are needed, or if the task is complete.
+
+The modern approach to creating agents in LangChain uses the `create_react_agent` function and `AgentExecutor`:
+
+```bash
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain_core.tools import Tool
+
+# Create the ReAct agent prompt template
+# The ReAct prompt needs to instruct the model to follow the thought-action-observation pattern
+prompt_template = """You are an agent who has access to the following tools:
+
+{tools}
+
+The available tools are: {tool_names}
+
+To use a tool, please use the following format:
+```
+Thought: I need to figure out what to do
+Action: tool_name
+Action Input: the input to the tool
+```
+
+After you use a tool, the observation will be provided to you:
+```
+Observation: result of the tool
+```
+
+Then you should continue with the thought-action-observation cycle until you have enough information to respond to the user's request directly.
+When you have the final answer, respond in this format:
+```
+Thought: I know the answer
+Final Answer: the final answer to the original query
+```
+
+Remember, when using the Python Calculator tool, the input must be valid Python code.
+
+Begin!
+
+Question: {input}
+{agent_scratchpad}
+"""
+
+prompt = PromptTemplate.from_template(prompt_template)
+
+# Create the agent
+agent = create_react_agent(
+    llm=llama_llm,
+    tools=tools,
+    prompt=prompt
+)
+
+# Create the agent executor
+agent_executor = AgentExecutor(
+    agent=agent, 
+    tools=tools, 
+    verbose=True,
+    handle_parsing_errors=True
+)
+
+```
+
+The `create_react_agent` function creates an agent that follows the Reasoning + Acting (ReAct) framework. This framework was introduced in a [2023 paper](https://arxiv.org/abs/2210.03629) and has become one of the most effective approaches for LLM-based agents.
+
+**Key aspects of `create_react_agent`:**
+
+**Input Parameters**:
+
+- llm: The language model that powers the agent's reasoning. This is the "brain" that decides what to do.
+- tools: The list of tools the agent can use to interact with the world.
+- prompt: The instructions that guide the agent's behavior and explain the tools.
+
+**How ReAct Works**: The ReAct framework follows a specific cycle:
+
+- Reasoning: The agent thinks about the problem and plans its approach
+- Action: It selects a tool and formulates the input
+- Observation: It receives the result of the tool execution
+- Repeat: It reasons about the observation and decides the next step
+
+**Output Format Control**: The ReAct agent must produce output in a structured format that includes:
+
+- Thought: The agent's reasoning process
+- Action: The tool to use
+- Action Input: The input to the tool
+- Observation: The result of the tool execution
+- Final Answer: The final response when the agent has solved the problem
+
+The `AgentExecutor` is a crucial component that manages the execution flow of the agent. This component handles the orchestration between the agent's reasoning and the actual tool execution.
+
+**Key responsibilities of `AgentExecutor`:**
+
+**Execution Loop Management**:
+
+- Sends the initial query to the agent
+- Parses the agent's response to identify tool calls
+- Executes the specified tools with the provided inputs
+- Feeds tool results back to the agent
+- Continues this loop until the agent reaches a final answer
+
+**Input Parameters**:
+
+- agent: The agent object created with create_react_agent
+- tools: The same list of tools provided to the agent
+- verbose: When set to True, displays the entire thought process, which is extremely helpful for debugging
+
+**Error Handling**:
+
+- Catches and manages errors that occur during tool execution
+- Can be configured with handle_parsing_errors=True to recover from agent output format errors
+- Can implement retry logic for failed tool executions
+
+**Memory and State**:
+
+- Maintain the conversation state across multiple steps
+- Can configure with different types of memory for storing conversation history
+
+**Early Stopping**:
+
+- Can enforce maximum iterations to prevent infinite loops
+- Implements timeouts to handle tool executions that take too long
+
+Let's test the agent with a simple problem that requires only one tool:
+
+### **Exercise 7**
+
+### **Creating Your First LangChain Agent with Basic Tools**
+
+In this exercise, you'll build a simple agent that can help users with basic tasks using two custom tools. This exercise is a perfect starting point for understanding how LangChain agents work.
+
+**Instructions:**
+
+1. Create two simple tools: A calculator and a text formatter.
+2. Set up a basic agent that can use these tools.
+3. Test the agent with straightforward questions.
+
+```bash
+from langchain_core.tools import Tool
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain_core.prompts import PromptTemplate
+
+# TODO: Create a simple calculator tool
+def calculator(expression: str) -> str:
+    """A simple calculator that can add, subtract, multiply, or divide two numbers.
+    Input should be a mathematical expression like '2 + 2' or '15 / 3'."""
+    try:
+        # HINT: Use Python's eval() function for simple calculations
+        # Your code here
+        result = eval(expression)
+        print(f"\n Result : {result}")
+        pass
+    except Exception as e:
+        return f"Error calculating: {str(e)}"
+
+# TODO: Create a text formatting tool
+def format_text(text: str) -> str:
+    """Format text to uppercase, lowercase, or title case.
+    Input should be in format: '[format_type]: [text]'
+    where format_type is 'uppercase', 'lowercase', or 'titlecase'."""
+    try:
+        # HINT: Parse the input to get format type and text
+        if ":" in text:
+            format_type, content = text.split(":", 1)
+            format_type = format_type.strip().lower()
+            content = content.strip()
+        else:
+            # If no colon, assume they want titlecase
+            return f"Missing format. Example: titlecase: {text} -> {text.title()}"
+            
+        if format_type == "uppercase":
+            return content.upper()
+        elif format_type == "lowercase":
+            return content.lower()
+        elif format_type == "titlecase":
+            return content.title()
+        else:
+            return f"Unknown format {format_type}. Use: uppercase, lowercase, or titlecase"
+        pass
+    except Exception as e:
+        return f"Error formatting text: {str(e)}"
+
+# TODO: Create Tool objects for our functions
+# HINT: Use the Tool class to wrap the functions
+tools = [
+    Tool(
+        name="calculator",
+        func=calculator,
+        description="Useful for performing simple math calculations"
+    ),
+    Tool(
+        name="format_text",
+        func=format_text,
+        description="Useful for formatting text to uppercase, lowercase, or titlecase"
+    )
+]
+
+# TODO: Create a simple prompt template
+prompt_template = """You are a helpful assistant who can use tools to help with simple tasks.
+You have access to these tools:
+
+{tools}
+
+The available tools are: {tool_names}
+
+Follow this format:
+
+Question: the user's question
+Thought: think about what to do
+Action: the tool to use, should be one of [{tool_names}]
+Action Input: the input to the tool
+Observation: the result from the tool
+Thought: I now know the final answer
+Final Answer: your final answer to the user's question
+
+Question: {input}
+{agent_scratchpad}
+"""
+
+# TODO: Create the agent and executor
+prompt = PromptTemplate.from_template(prompt_template)
+agent = create_react_agent(
+    llm=llama_llm,
+    tools=tools,
+    prompt=prompt
+)
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True
+)
+
+# Test with simple questions
+test_questions = [
+    "What is 25 + 63?", 
+    "Can you convert 'hello world' to uppercase?",
+    "Calculate 15 * 7", 
+    "titlecase: langchain is awesome",
+]
+
+# TODO: Run the tests
+for question in test_questions:
+    print(f"\n===== Testing: {question} =====")
+    agent_executor.invoke({"input": question})
+    print(f"Final Answer: {result['output']}")
+```
+
+##
+>>>>>>> Stashed changes
