@@ -10,3 +10,8 @@ pypdf==4.2.0
 chromadb==0.4.24
 pdb
 Deprecated
+numpy
+pandas 
+scikit-learn 
+matplotlib 
+tensorflow
