@@ -459,3 +459,9 @@ And you can also use production-ready runtime, such as vLLM, for the model servi
 ## **FLASK**
 
 [**FLASK**](https://www.notion.so/FLASK-2f9fdd05003e805aa05ec82a8bd28f56?pvs=21)
+
+## Module 3 Course 1 —> **Hands-on with GenAI: Choosing the Right Model for Your Application**
+
+[Module 3 Course 1 —> **Hands-on with GenAI: Choosing the Right Model for Your Application**](https://www.notion.so/Module-3-Course-1-Hands-on-with-GenAI-Choosing-the-Right-Model-for-Your-Application-2f6fdd05003e8041adf8ea5a66c5fcf6?pvs=21)
+
+[**Summary and Highlights: Build a Generative AI Application with LangChain**](https://www.notion.so/Summary-and-Highlights-Build-a-Generative-AI-Application-with-LangChain-2fafdd05003e803faf66cbf72b570186?pvs=21)
