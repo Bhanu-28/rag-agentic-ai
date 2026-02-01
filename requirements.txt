@@ -15,3 +15,4 @@ pandas
 scikit-learn 
 matplotlib 
 tensorflow
+Flask==3.1.2 
