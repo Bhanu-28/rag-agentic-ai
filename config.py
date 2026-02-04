@@ -20,6 +20,8 @@ class Config:
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4")
     OPENAI_ORG_ID: Optional[str] = os.getenv("OPENAI_ORG_ID")
+
+    OPENROUTER_API_KEY: Optional[str] = os.getenv("OPEN_ROUTER_API_KEY")
     
     # Anthropic (Claude) Configuration
     ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
