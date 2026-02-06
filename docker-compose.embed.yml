@@ -1,0 +1,24 @@
+version: "3.9"
+
+# Embeddings only (API-based, no UI needed)
+# Usage: docker-compose -f docker-compose.embed.yml up -d
+# Access: http://localhost:11435
+
+services:
+  ollama-embed:
+    image: ollama/ollama
+    container_name: ollama-embed
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_embed:/root/.ollama
+    environment:
+      - OLLAMA_NUM_THREADS=2
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+    restart: unless-stopped
+
+volumes:
+  ollama_embed:

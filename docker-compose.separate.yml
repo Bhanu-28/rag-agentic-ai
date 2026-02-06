@@ -1,0 +1,56 @@
+version: "3.9"
+
+# Run BOTH LLM and embeddings concurrently (resource-isolated)
+# LLM: 4 cores, Embeddings: 2 cores
+# Usage: docker-compose -f docker-compose.separate.yml up -d
+
+services:
+  ollama-llm:
+    image: ollama/ollama
+    container_name: ollama-llm
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_llm:/root/.ollama
+    environment:
+      - OLLAMA_NUM_THREADS=4
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+    restart: unless-stopped
+
+  ollama-embed:
+    image: ollama/ollama
+    container_name: ollama-embed
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama_embed:/root/.ollama
+    environment:
+      - OLLAMA_NUM_THREADS=2
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+    restart: unless-stopped
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://ollama-llm:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - open_webui:/app/backend/data
+    depends_on:
+      - ollama-llm
+    restart: unless-stopped
+
+volumes:
+  ollama_llm:
+  ollama_embed:
+  open_webui:
