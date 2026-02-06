@@ -55,6 +55,12 @@ class Config:
     LANGSMITH_API_KEY: Optional[str] = os.getenv("LANGSMITH_API_KEY")
     LANGSMITH_PROJECT: Optional[str] = os.getenv("LANGSMITH_PROJECT")
     
+    # Ollama (Local LLM) Configuration
+    OLLAMA_LLM_URL: str = os.getenv("OLLAMA_LLM_URL", "http://localhost:11434")
+    OLLAMA_EMBED_URL: str = os.getenv("OLLAMA_EMBED_URL", "http://localhost:11434")
+    OLLAMA_LLM_MODEL: str = os.getenv("OLLAMA_LLM_MODEL", "qwen2.5-coder:3b")
+    OLLAMA_EMBED_MODEL: str = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text:v1.5")
+    
     # Application Settings
     APP_ENV: str = os.getenv("APP_ENV", "development")
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
