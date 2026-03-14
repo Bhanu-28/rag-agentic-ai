@@ -12,8 +12,8 @@ Browser / Phone (LAN)
         |
         v
     Ollama (:11434)
-    ├── qwen2.5-coder:3b  (LLM)
-    └── nomic-embed-text:v1.5 (Embeddings)
+    ├──── qwen2.5-coder:3b  (LLM)
+    └──── nomic-embed-text:v1.5 (Embeddings)
 ```
 
 ## Prerequisites
