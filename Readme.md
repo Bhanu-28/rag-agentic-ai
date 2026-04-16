@@ -1,5 +1,7 @@
 # IBM RAG AND GENERATIVE AI
 
+
+target to complete by may 23rd
 Description: https://www.coursera.org/professional-certificates/ibm-rag-and-agentic-ai
 
 # Foundations of Generative AI and prompt Engineering
