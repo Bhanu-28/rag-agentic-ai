@@ -33,4 +33,5 @@ services:
 
 volumes:
   ollama_models:
+    external: true  # Use existing volume with models
   open_webui:

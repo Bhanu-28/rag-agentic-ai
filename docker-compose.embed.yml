@@ -11,7 +11,7 @@ services:
     ports:
       - "11435:11434"
     volumes:
-      - ollama_embed:/root/.ollama
+      - ollama_models:/root/.ollama
     environment:
       - OLLAMA_NUM_THREADS=2
     deploy:
@@ -21,4 +21,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  ollama_embed:
+  ollama_models:
+    external: true  # Use existing volume with models
+

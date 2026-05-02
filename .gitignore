@@ -32,7 +32,8 @@ build/
 # Jupyter Notebooks
 .ipynb_checkpoints/
 *.ipynb_checkpoints
-
+*IBM RAG and Agentic AI Course Notes
+IBM RAG and Agentic AI Course Notes.rar
 # Testing
 .pytest_cache/
 .coverage

@@ -10,7 +10,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ollama_llm:/root/.ollama
+      - ollama_models:/root/.ollama
     environment:
       - OLLAMA_NUM_THREADS=4
     deploy:
@@ -35,5 +35,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  ollama_llm:
+  ollama_models:
+    external: true  # Use existing volume with models
   open_webui:
