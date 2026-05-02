@@ -122,7 +122,24 @@ docker-compose down
 
 # Stop and remove volumes (clean slate)
 docker-compose down -v
+
+#for Images containers and Volumes Information.
+docker system df -v
+
 ```
+
+---
+
+## Docker Compose Quick Reference
+
+| File | Purpose | Start | Stop |
+|------|---------|-------|------|
+| `docker-compose.yml` | Combined (single container) | `docker-compose up -d` | `docker-compose down` |
+| `docker-compose.llm.yml` | LLM + WebUI only | `docker-compose -f docker-compose.llm.yml up -d` | `docker-compose -f docker-compose.llm.yml down` |
+| `docker-compose.embed.yml` | Embeddings only (API :11435) | `docker-compose -f docker-compose.embed.yml up -d` | `docker-compose -f docker-compose.embed.yml down` |
+| `docker-compose.separate.yml` | Both running (isolated) | `docker-compose -f docker-compose.separate.yml up -d` | `docker-compose -f docker-compose.separate.yml down` |
+
+> **Tip:** Add `-v` to `down` command to also remove volumes (e.g., `docker-compose down -v`)
 
 ---
 
